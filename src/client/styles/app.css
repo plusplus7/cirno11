@@ -850,7 +850,8 @@ img {
 .admin-panel,
 .upload-fields,
 .json-compact,
-.json-panel {
+.json-panel,
+.structured-list-panel {
   display: grid;
   gap: 0.85rem;
 }
@@ -867,6 +868,30 @@ img {
   gap: 1rem;
   justify-content: space-between;
   margin-bottom: 1rem;
+}
+
+.admin-header-actions {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  justify-content: flex-end;
+}
+
+.admin-header-actions button,
+.panel-actions button {
+  background: rgba(255, 250, 242, 0.72);
+  border: 1px solid var(--admin-line);
+  border-radius: 999px;
+  color: var(--admin-text);
+  cursor: pointer;
+  padding: 0.45rem 0.7rem;
+}
+
+.admin-header-actions button:hover,
+.panel-actions button:hover {
+  background: var(--admin-panel-soft);
+  border-color: var(--admin-line-strong);
 }
 
 .admin-header p:not(.eyebrow) {
@@ -933,7 +958,11 @@ img {
 
 .post-workspace {
   align-items: start;
-  grid-template-columns: minmax(420px, 1.15fr) minmax(260px, 0.55fr) minmax(360px, 0.9fr);
+  grid-template-columns: minmax(420px, 1fr) minmax(420px, 1fr) minmax(260px, 320px);
+}
+
+.post-workspace.library-hidden {
+  grid-template-columns: repeat(2, minmax(420px, 1fr));
 }
 
 .admin-panel {
@@ -954,6 +983,19 @@ img {
   font-family: var(--mono);
 }
 
+.panel-actions {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  justify-content: flex-end;
+}
+
+.panel-actions span {
+  color: var(--admin-muted);
+  font-family: var(--mono);
+}
+
 .field-grid {
   display: grid;
   gap: 0.75rem;
@@ -968,6 +1010,7 @@ img {
 
 .admin-panel input,
 .admin-panel textarea,
+.admin-panel select,
 .login-card input {
   background: #fffdf8;
   border: 1px solid var(--admin-line);
@@ -979,6 +1022,7 @@ img {
 
 .admin-panel input:focus,
 .admin-panel textarea:focus,
+.admin-panel select:focus,
 .login-card input:focus {
   border-color: var(--accent);
   box-shadow: 0 0 0 3px rgba(47, 125, 107, 0.13);
@@ -1012,7 +1056,8 @@ img {
 .action-bar button,
 .upload-fields button,
 .json-panel button,
-.json-compact button {
+.json-compact button,
+.structured-list-panel button {
   background: transparent;
   border: 1px solid var(--admin-line);
   border-radius: 999px;
@@ -1024,7 +1069,8 @@ img {
 .action-bar button:hover,
 .upload-fields button:hover,
 .json-panel button:hover,
-.json-compact button:hover {
+.json-compact button:hover,
+.structured-list-panel button:hover {
   border-color: var(--admin-line-strong);
   background: var(--admin-panel-soft);
 }
@@ -1140,6 +1186,74 @@ img {
   grid-template-columns: minmax(260px, 0.75fr) minmax(0, 1.25fr);
 }
 
+.metadata-workspace {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: minmax(260px, 0.65fr) minmax(0, 1.35fr);
+}
+
+.metadata-list {
+  display: grid;
+  gap: 0.55rem;
+  max-height: 620px;
+  overflow: auto;
+}
+
+.metadata-row {
+  align-items: center;
+  background: #fffdf8;
+  border: 1px solid var(--admin-line);
+  border-radius: 6px;
+  display: grid;
+  gap: 0.65rem;
+  grid-template-columns: 64px minmax(0, 1fr) auto;
+  padding: 0.5rem;
+}
+
+.metadata-row img {
+  aspect-ratio: 1;
+  background: var(--admin-panel-soft);
+  border: 1px solid var(--admin-line);
+  border-radius: 5px;
+  height: 64px;
+  object-fit: cover;
+  width: 64px;
+}
+
+.metadata-row div {
+  display: grid;
+  gap: 0.15rem;
+  min-width: 0;
+}
+
+.metadata-row strong,
+.metadata-row span,
+.metadata-row small {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.metadata-row strong {
+  color: var(--admin-text);
+  font-weight: 560;
+}
+
+.metadata-row span,
+.metadata-row small {
+  color: var(--admin-muted);
+}
+
+.check-field {
+  align-items: center;
+  display: flex;
+  gap: 0.5rem;
+}
+
+.check-field input {
+  width: auto;
+}
+
 .publish-panel {
   align-items: center;
   display: flex;
@@ -1152,7 +1266,9 @@ img {
   .archive-band,
   .photo-group,
   .post-workspace,
-  .media-split {
+  .post-workspace.library-hidden,
+  .media-split,
+  .metadata-workspace {
     grid-template-columns: 1fr;
   }
 
@@ -1161,6 +1277,10 @@ img {
   }
 
   .admin-list {
+    max-height: none;
+  }
+
+  .metadata-list {
     max-height: none;
   }
 }

@@ -1,73 +1,4 @@
-# admin-content-management Specification
-
-## Purpose
-TBD - created by archiving change build-personal-site-platform. Update Purpose after archive.
-## Requirements
-### Requirement: Owner-only admin access
-The system SHALL restrict all admin screens and admin API operations to the site owner.
-
-#### Scenario: Unauthenticated user opens admin
-- **WHEN** an unauthenticated user opens an admin route
-- **THEN** the system requires authentication before showing admin content
-
-#### Scenario: Unauthenticated user calls admin API
-- **WHEN** an unauthenticated request calls an admin API endpoint
-- **THEN** the system MUST reject the request
-
-### Requirement: Concealed admin entry route
-The public UI SHALL NOT expose a visible navigation control to the owner admin screen, and the admin UI SHALL be served from `/plusplus7_admin_portal`.
-
-#### Scenario: Public visitor views site chrome
-- **WHEN** a public visitor views shared site navigation or footer chrome
-- **THEN** the system does not display an admin navigation link or button
-
-#### Scenario: Owner opens canonical admin route
-- **WHEN** the owner opens `/plusplus7_admin_portal`
-- **THEN** the system displays the admin authentication or authenticated workspace flow
-
-#### Scenario: Visitor opens legacy admin route
-- **WHEN** a visitor opens `/admin`
-- **THEN** the system does not display the admin authentication or authenticated workspace flow
-
-### Requirement: Blog post CRUD
-The system SHALL allow the owner to create, read, update, and delete blog posts stored as Markdown files.
-
-#### Scenario: Owner saves a new post
-- **WHEN** the owner submits a new blog post with frontmatter fields and Markdown body
-- **THEN** the system creates a Markdown post in the content store
-
-#### Scenario: Owner updates a post
-- **WHEN** the owner edits an existing blog post
-- **THEN** the system updates the corresponding Markdown post in the content store
-
-#### Scenario: Owner deletes a post
-- **WHEN** the owner deletes a blog post
-- **THEN** the system removes the corresponding Markdown post from the content store
-
-### Requirement: Blog draft workflow
-The system SHALL support draft blog posts that are editable in admin but excluded from public builds.
-
-#### Scenario: Owner saves draft
-- **WHEN** the owner saves a blog post as draft
-- **THEN** the system stores the post with `published` set to false
-
-#### Scenario: Owner publishes draft
-- **WHEN** the owner publishes a draft blog post
-- **THEN** the system stores the post with `published` set to true and makes it eligible for the next public build
-
-### Requirement: Markdown preview
-The system SHALL provide Markdown preview for admin blog editing without publishing the post.
-
-#### Scenario: Owner previews Markdown
-- **WHEN** the owner requests preview for Markdown content
-- **THEN** the system returns rendered preview content without changing the public release
-
-### Requirement: Text editor for Markdown
-The admin UI SHALL provide a plain text Markdown editor with preview.
-
-#### Scenario: Owner edits post body
-- **WHEN** the owner opens a blog post editor
-- **THEN** the system provides a text editing area for Markdown and a way to view rendered preview
+## MODIFIED Requirements
 
 ### Requirement: Photography CRUD
 The system SHALL allow the owner to create, read, update, and delete photography entries and associated image files. Photo upload SHALL accept multipart file uploads and preserve original and thumbnail media references for saved photo metadata.
@@ -103,13 +34,6 @@ The system SHALL allow the owner to create, read, update, and delete lab tool pa
 - **WHEN** the owner deletes a lab tool item from the admin list
 - **THEN** the system removes the item from stored lab metadata
 
-### Requirement: Publish trigger
-The admin UI SHALL allow the owner to trigger publication after content changes.
-
-#### Scenario: Owner publishes content changes
-- **WHEN** the owner triggers publish from admin
-- **THEN** the system starts a public site build and release process
-
 ### Requirement: Admin workspace presentation
 The admin UI SHALL present authenticated content management at `/plusplus7_admin_portal` as a focused owner workspace rather than a generic stacked form page, and it SHALL provide a visible action for returning to the public homepage.
 
@@ -124,17 +48,6 @@ The admin UI SHALL present authenticated content management at `/plusplus7_admin
 #### Scenario: Owner returns to public homepage
 - **WHEN** the authenticated owner activates the admin header homepage action
 - **THEN** the system navigates to the public blog homepage
-
-### Requirement: Improved admin authentication presentation
-The admin authentication screen SHALL clearly present the owner-only entry point without exposing admin content before authentication, and it SHALL display clear feedback when sign-in fails.
-
-#### Scenario: Unauthenticated user opens admin
-- **WHEN** an unauthenticated user opens `/plusplus7_admin_portal`
-- **THEN** the system displays a polished sign-in view with password input and sign-in action only
-
-#### Scenario: Owner enters an invalid password
-- **WHEN** the owner submits an incorrect admin password
-- **THEN** the system displays a visible authentication failure message without showing admin content
 
 ### Requirement: Markdown editing workspace
 The admin post editor SHALL provide a clearer Markdown writing workflow with visible metadata fields, body editing, automatic preview, equal-width editing and preview columns, and save/publish actions.
@@ -192,15 +105,3 @@ The admin UI SHALL make photo upload, photo metadata management, and lab metadat
 #### Scenario: Owner adds lab metadata
 - **WHEN** the owner submits the lab item form with valid fields for an external or internal tool
 - **THEN** the system adds a valid lab metadata item to the structured lab list and persists it
-
-### Requirement: Publish status presentation
-The admin UI SHALL make publish status and build action visible and understandable.
-
-#### Scenario: Owner views publish section
-- **WHEN** the owner views the publish controls
-- **THEN** the system displays the current publish state and a clear action to trigger a public site build
-
-#### Scenario: Publish state changes
-- **WHEN** the publish API returns a new job state
-- **THEN** the system updates the displayed publish state without changing the existing publish API contract
-

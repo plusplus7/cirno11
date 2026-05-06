@@ -1,4 +1,5 @@
 import express from 'express';
+import multer from 'multer';
 import type { AppConfig } from '../config/env';
 import { clearSessionCookie, createSessionToken, hasOwnerSession, requireOwner, setSessionCookie } from '../auth/session';
 import type { ContentStore } from '../content/store';
@@ -8,6 +9,41 @@ import { isLabToolArray } from '../../shared/types';
 import type { MediaStorage } from '../media/mediaStorage';
 import type { PublishService } from '../publish/publishService';
 import { asyncHandler, fail, ok } from './http';
+
+const photoUploadMaxBytes = 100 * 1024 * 1024;
+const photoUpload = multer({
+  storage: multer.memoryStorage(),
+  limits: {
+    fileSize: photoUploadMaxBytes,
+    files: 1,
+  },
+});
+
+export class PhotoUploadError extends Error {
+  constructor(
+    public readonly status: number,
+    public readonly code: string,
+    message: string,
+  ) {
+    super(message);
+  }
+}
+
+export async function storeUploadedPhoto(file: Express.Multer.File | undefined, mediaStorage: MediaStorage) {
+  if (!file) {
+    throw new PhotoUploadError(400, 'PHOTO_FILE_REQUIRED', '请选择要上传的照片文件。');
+  }
+
+  if (!file.mimetype.startsWith('image/')) {
+    throw new PhotoUploadError(400, 'INVALID_PHOTO_TYPE', '照片上传只支持图片文件。');
+  }
+
+  return await mediaStorage.storePhoto({
+    filename: file.originalname || 'photo.jpg',
+    contentType: file.mimetype || 'image/jpeg',
+    data: file.buffer,
+  });
+}
 
 function param(value: string | string[] | undefined): string {
   return Array.isArray(value) ? value[0] : value ?? '';
@@ -79,12 +115,16 @@ export function createAdminRouter(
     ok(response, await contentStore.listPhotos());
   }));
 
-  router.post('/photos/upload', asyncHandler(async (request, response) => {
-    const data = String(request.body?.data ?? '');
-    const filename = String(request.body?.filename ?? 'photo.jpg');
-    const contentType = String(request.body?.contentType ?? 'image/jpeg');
-    const base64 = data.includes(',') ? data.split(',').pop() ?? '' : data;
-    ok(response, await mediaStorage.storePhoto({ filename, contentType, data: Buffer.from(base64, 'base64') }));
+  router.post('/photos/upload', photoUpload.single('photo'), asyncHandler(async (request, response) => {
+    try {
+      ok(response, await storeUploadedPhoto(request.file, mediaStorage));
+    } catch (error) {
+      if (error instanceof PhotoUploadError) {
+        fail(response, error.status, error.code, error.message);
+        return;
+      }
+      throw error;
+    }
   }));
 
   router.put('/photos', asyncHandler(async (request, response) => {

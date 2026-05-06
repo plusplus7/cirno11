@@ -364,6 +364,7 @@ function Admin() {
   const [previewState, setPreviewState] = useState<PreviewState>('idle');
   const [status, setStatus] = useState('idle');
   const [activeTab, setActiveTab] = useState<AdminTab>('posts');
+  const [postLibraryVisible, setPostLibraryVisible] = useState(true);
   const [toast, setToast] = useState<ToastMessage | undefined>();
   const previewRequest = useRef(0);
 
@@ -471,7 +472,10 @@ function Admin() {
           <h1>内容管理</h1>
           <p>管理公开站点的内容、媒体和发布状态。</p>
         </div>
-        <div className={`status-pill status-${status}`}>发布状态：{publishStateLabel(status)}</div>
+        <div className="admin-header-actions">
+          <button type="button" onClick={() => { window.location.href = '/'; }}>回到博客主页</button>
+          <div className={`status-pill status-${status}`}>发布状态：{publishStateLabel(status)}</div>
+        </div>
       </header>
 
       <nav className="admin-tabs" aria-label="后台模块">
@@ -490,14 +494,19 @@ function Admin() {
       </nav>
 
       {activeTab === 'posts' && (
-        <div className="admin-tab-panel post-workspace" role="tabpanel">
+        <div className={`admin-tab-panel post-workspace ${postLibraryVisible ? '' : 'library-hidden'}`} role="tabpanel">
           <section className="admin-panel post-editor">
             <div className="panel-heading">
               <div>
                 <p className="eyebrow">Markdown 编辑</p>
                 <h2>文章编辑</h2>
               </div>
-              <span>{draft.frontmatter.published ? '已发布' : '草稿'}</span>
+              <div className="panel-actions">
+                <span>{draft.frontmatter.published ? '已发布' : '草稿'}</span>
+                <button type="button" onClick={() => setPostLibraryVisible((visible) => !visible)}>
+                  {postLibraryVisible ? '隐藏文章库' : `显示文章库 (${posts.length})`}
+                </button>
+              </div>
             </div>
             <div className="field-grid">
               <label>
@@ -533,26 +542,6 @@ function Admin() {
             </div>
           </section>
 
-          <aside className="admin-panel post-list-panel">
-            <div className="panel-heading">
-              <div>
-                <p className="eyebrow">文章库</p>
-                <h2>文章库</h2>
-              </div>
-              <span>{posts.length}</span>
-            </div>
-            <div className="admin-list">
-              {posts.length > 0 ? posts.map((post) => (
-                <div className="admin-list-item" key={post.frontmatter.slug}>
-                  <button className="load-post" type="button" onClick={() => setDraft(post)}>
-                    <strong>{post.frontmatter.title || post.frontmatter.slug}</strong>
-                  </button>
-                  <button className="danger-action" type="button" onClick={() => void api.deletePost(post.frontmatter.slug).then(() => setPosts(posts.filter((item) => item.frontmatter.slug !== post.frontmatter.slug)))}>删除</button>
-                </div>
-              )) : <p className="muted">暂无文章。</p>}
-            </div>
-          </aside>
-
           <section className="admin-panel preview-panel">
             <div className="panel-heading">
               <div>
@@ -564,6 +553,29 @@ function Admin() {
             {previewState === 'error' && <p className="preview-error">预览生成失败，正文仍可继续编辑。</p>}
             <div className="preview article-body" dangerouslySetInnerHTML={{ __html: preview || '<p>输入 Markdown 后，这里会自动显示当前草稿的渲染效果。</p>' }} />
           </section>
+
+          {postLibraryVisible && <aside className="admin-panel post-list-panel">
+            <div className="panel-heading">
+              <div>
+                <p className="eyebrow">文章库</p>
+                <h2>文章库</h2>
+              </div>
+              <div className="panel-actions">
+                <span>{posts.length}</span>
+                <button type="button" onClick={() => setPostLibraryVisible(false)}>隐藏</button>
+              </div>
+            </div>
+            <div className="admin-list">
+              {posts.length > 0 ? posts.map((post) => (
+                <div className="admin-list-item" key={post.frontmatter.slug}>
+                  <button className="load-post" type="button" onClick={() => setDraft(post)}>
+                    <strong>{post.frontmatter.title || post.frontmatter.slug}</strong>
+                  </button>
+                  <button className="danger-action" type="button" onClick={() => void api.deletePost(post.frontmatter.slug).then(() => setPosts(posts.filter((item) => item.frontmatter.slug !== post.frontmatter.slug)))}>删除</button>
+                </div>
+              )) : <p className="muted">暂无文章。</p>}
+            </div>
+          </aside>}
         </div>
       )}
 
@@ -581,7 +593,7 @@ function Admin() {
 
       {activeTab === 'lab' && (
         <div className="admin-tab-panel" role="tabpanel">
-          <JsonManager title="杂物间入口" value={tools} onSave={(value) => api.saveLab(value).then(setTools)} onSuccess={() => showToast('杂物间入口已保存')} />
+          <LabManager tools={tools} setTools={setTools} onSuccess={showToast} />
         </div>
       )}
 
@@ -612,11 +624,7 @@ function PhotoManager({ photos, setPhotos, onSuccess }: { photos: PhotoEntry[]; 
 
   async function addPhoto() {
     if (!file) return;
-    const uploaded = await api.uploadPhoto({
-      filename: file.name,
-      contentType: file.type || 'image/jpeg',
-      data: await readFileAsDataUrl(file),
-    });
+    const uploaded = await api.uploadPhoto(file);
     const next = [
       {
         id: uploaded.id,
@@ -637,6 +645,11 @@ function PhotoManager({ photos, setPhotos, onSuccess }: { photos: PhotoEntry[]; 
     setFile(undefined);
   }
 
+  async function deletePhoto(id: string) {
+    setPhotos(await api.savePhotos(photos.filter((photo) => photo.id !== id)));
+    onSuccess('照片元数据已更新');
+  }
+
   return (
     <section className="admin-panel media-panel">
       <div className="panel-heading">
@@ -654,9 +667,159 @@ function PhotoManager({ photos, setPhotos, onSuccess }: { photos: PhotoEntry[]; 
           <label><span>图片文件</span><input type="file" accept="image/*" onChange={(event) => setFile(event.target.files?.[0])} /></label>
           <button type="button" onClick={() => void addPhoto()}>上传照片</button>
         </div>
-        <JsonManager title="照片元数据" value={photos} onSave={(value) => api.savePhotos(value).then(setPhotos)} onSuccess={() => onSuccess('照片元数据已保存')} compact />
+        <StructuredListPanel
+          title="照片元数据"
+          eyebrow="结构化数据"
+          count={photos.length}
+          emptyText="暂无照片。上传照片后会显示在这里。"
+        >
+          {photos.map((photo) => (
+            <MetadataRow
+              imageUrl={photo.thumbnailUrl ?? photo.imageUrl}
+              key={photo.id}
+              title={photo.title || photo.id}
+              meta={`${formatDate(photo.date)} / ${photo.location || 'Unknown location'}`}
+              detail={photo.published ? '已发布' : '草稿'}
+              onDelete={() => void deletePhoto(photo.id)}
+            />
+          ))}
+        </StructuredListPanel>
       </div>
     </section>
+  );
+}
+
+function LabManager({ tools, setTools, onSuccess }: { tools: LabTool[]; setTools: (tools: LabTool[]) => void; onSuccess: (message: string) => void }) {
+  const [name, setName] = useState('');
+  const [imageUrl, setImageUrl] = useState('');
+  const [kind, setKind] = useState<LabTool['kind']>('external');
+  const [target, setTarget] = useState('');
+  const [enabled, setEnabled] = useState(true);
+
+  async function save(nextTools: LabTool[], message: string) {
+    setTools(await api.saveLab(nextTools));
+    onSuccess(message);
+  }
+
+  async function addTool() {
+    const cleanName = name.trim();
+    const cleanImageUrl = imageUrl.trim();
+    const cleanTarget = target.trim();
+    if (!cleanName || !cleanImageUrl || !cleanTarget) return;
+    const id = slugifyId(cleanName) || `tool-${Date.now()}`;
+    const tool: LabTool = kind === 'external'
+      ? { id, name: cleanName, imageUrl: cleanImageUrl, kind: 'external', url: cleanTarget, enabled }
+      : { id, name: cleanName, imageUrl: cleanImageUrl, kind: 'internal', route: cleanTarget, enabled };
+
+    await save([tool, ...tools.filter((item) => item.id !== tool.id)], '杂物间入口已新增');
+    setName('');
+    setImageUrl('');
+    setTarget('');
+    setKind('external');
+    setEnabled(true);
+  }
+
+  return (
+    <section className="admin-panel lab-manager">
+      <div className="panel-heading">
+        <div>
+          <p className="eyebrow">结构化数据</p>
+          <h2>杂物间入口</h2>
+        </div>
+        <span>{tools.length}</span>
+      </div>
+      <div className="metadata-workspace">
+        <div className="upload-fields lab-form">
+          <label><span>名称</span><input value={name} onChange={(event) => setName(event.target.value)} placeholder="工具名称" /></label>
+          <label><span>图片 URL</span><input value={imageUrl} onChange={(event) => setImageUrl(event.target.value)} placeholder="/images/tool.jpg" /></label>
+          <label>
+            <span>类型</span>
+            <select value={kind} onChange={(event) => setKind(event.target.value as LabTool['kind'])}>
+              <option value="external">外部链接</option>
+              <option value="internal">内部路由</option>
+            </select>
+          </label>
+          <label><span>{kind === 'external' ? '外部 URL' : '内部路由'}</span><input value={target} onChange={(event) => setTarget(event.target.value)} placeholder={kind === 'external' ? 'https://example.com' : '/tools/demo'} /></label>
+          <label className="check-field">
+            <input type="checkbox" checked={enabled} onChange={(event) => setEnabled(event.target.checked)} />
+            <span>公开显示</span>
+          </label>
+          <button type="button" onClick={() => void addTool()}>新增入口</button>
+        </div>
+        <StructuredListPanel
+          title="入口列表"
+          eyebrow="杂物间"
+          count={tools.length}
+          emptyText="暂无杂物间入口。"
+        >
+          {tools.map((tool) => (
+            <MetadataRow
+              imageUrl={tool.imageUrl}
+              key={tool.id}
+              title={tool.name}
+              meta={tool.kind === 'external' ? tool.url : tool.route}
+              detail={`${tool.kind === 'external' ? '外部链接' : '内部路由'} / ${tool.enabled ? '已启用' : '已隐藏'}`}
+              onDelete={() => void save(tools.filter((item) => item.id !== tool.id), '杂物间入口已删除')}
+            />
+          ))}
+        </StructuredListPanel>
+      </div>
+    </section>
+  );
+}
+
+function StructuredListPanel({
+  title,
+  eyebrow,
+  count,
+  emptyText,
+  children,
+}: {
+  title: string;
+  eyebrow: string;
+  count: number;
+  emptyText: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className="structured-list-panel">
+      <div className="panel-heading">
+        <div>
+          <p className="eyebrow">{eyebrow}</p>
+          <h2>{title}</h2>
+        </div>
+        <span>{count}</span>
+      </div>
+      <div className="metadata-list">
+        {count > 0 ? children : <p className="muted">{emptyText}</p>}
+      </div>
+    </div>
+  );
+}
+
+function MetadataRow({
+  imageUrl,
+  title,
+  meta,
+  detail,
+  onDelete,
+}: {
+  imageUrl: string;
+  title: string;
+  meta: string;
+  detail: string;
+  onDelete: () => void;
+}) {
+  return (
+    <div className="metadata-row">
+      <img src={imageUrl} alt="" />
+      <div>
+        <strong>{title}</strong>
+        <span>{meta}</span>
+        <small>{detail}</small>
+      </div>
+      <button className="danger-action" type="button" onClick={onDelete}>删除</button>
+    </div>
   );
 }
 
@@ -787,13 +950,12 @@ function formatDate(value: string): string {
   return `${year}.${month.padStart(2, '0')}.${day.padStart(2, '0')}`;
 }
 
-function readFileAsDataUrl(file: File): Promise<string> {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.addEventListener('load', () => resolve(String(reader.result)));
-    reader.addEventListener('error', () => reject(reader.error));
-    reader.readAsDataURL(file);
-  });
+function slugifyId(value: string): string {
+  return value
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '');
 }
 
 function emptyPost(): BlogPost {
