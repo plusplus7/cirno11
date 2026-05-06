@@ -8,4 +8,4 @@
 
 Public releases are written under `releases/<timestamp>` and activated by switching the `current` symlink after verification.
 
-Photo uploads use multipart requests and Express accepts files up to 100MB on `/api/photos/upload`. Keep nginx `client_max_body_size` at 100m or higher for the proxied admin API path, otherwise nginx can return `413 Request Entity Too Large` before Express receives the upload.
+Photo uploads use multipart requests and Express accepts files up to 100MB on `/api/photos/upload`. Set nginx `client_max_body_size 100m;` in the HTTPS server block or proxied `/api/` location, then run `nginx -t && nginx -s reload` with sudo-capable access. Without this, nginx can return `413 Request Entity Too Large` before Express receives the upload.

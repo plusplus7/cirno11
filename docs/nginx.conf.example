@@ -2,6 +2,8 @@ server {
   listen 80;
   server_name example.com;
 
+  client_max_body_size 100m;
+
   root /srv/cirno11/current;
   index index.html;
 
@@ -23,4 +25,3 @@ server {
     try_files $uri $uri/ /index.html;
   }
 }
-

@@ -138,6 +138,7 @@ ps -ef | grep -E 'node|hexo|tsx|pm2' | grep -v grep
 ### 服务器 Node 版本可能偏旧
 
 - 服务器曾只有 Node `v14.21.3`，直接跑现代 TS/tsx 依赖风险高。
+- 2026-05-06 确认服务器默认 Node 已更新到 `v22.12.0`，`npm` 为 `10.9.0`；部署前仍要复核 `node -v`、`npm -v`，避免 shell 环境差异。
 - 如果不先升级 Node，SRE 应使用本地 bundle 后的 `server.cjs` 部署到 `/var/www/cirno11/app`。
 - bundle 后仍要在服务器验证：
 
@@ -201,6 +202,14 @@ PATH=/var/www/cirno11/node-v22.12.0-linux-x64/bin:$PATH \
   npm ci --omit=dev --registry=https://registry.npmjs.org --replace-registry-host=always
 ```
 
+### admin 发布需要源码和完整工具链
+
+- `/api/publish` 会在生产 app 目录执行 `npm run build:static`。
+- 生产 app 必须包含 `src/`、`scripts/`、`rsbuild.config.ts`、`tsconfig.json`、`package.json`、`package-lock.json` 和完整 `node_modules`。
+- 不要用 `npm ci --omit=dev` 安装 admin 发布环境；否则 `tsx` 等构建工具缺失会导致发布状态失败。
+- `DIST_ROOT` 应指向生产 app 的构建输出目录，例如 `/var/www/cirno11/app/dist`，不要指向 `/var/www/cirno11/current`。
+- `node_modules.before-*` 备份不要留在 app 根目录，否则 Vitest 可能扫描到备份依赖里的 `*.test.js`。
+
 ### app 替换前先做旁路验证
 
 - 不要直接覆盖唯一运行中的 `/var/www/cirno11/app`。
@@ -215,6 +224,7 @@ PATH=/var/www/cirno11/node-v22.12.0-linux-x64/bin:$PATH \
 ### nginx reload 可能需要 sudo 权限
 
 - 2026-05-06 发布时，`admin` 用户运行 `nginx -t` 无法读取 `/etc/letsencrypt/live/plusplus7.com/fullchain.pem`，并且没有免密 sudo。
+- 2026-05-07 复查 413 上传问题时，线上 HTTPS server 和 `/api/` location 没有 `client_max_body_size`，nginx 默认约 1MB，会在进入 Express 前拦截 multipart 上传。需要有 sudo 权限的人增加 `client_max_body_size 100m;` 并执行 `nginx -t && nginx -s reload`。
 - 错误表现包括：
   - `could not open error log file: Permission denied`
   - `BIO_new_file(...fullchain.pem) failed`
