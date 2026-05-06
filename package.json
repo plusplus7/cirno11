@@ -1,0 +1,36 @@
+{
+  "name": "cirno11-blog",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "tsx src/server/index.ts",
+    "dev:frontend": "rsbuild dev",
+    "build": "npm run build:static",
+    "build:static": "tsx scripts/generate-public-data.ts && rsbuild build",
+    "start": "NODE_ENV=production tsx src/server/index.ts",
+    "check": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@rsbuild/core": "^1.6.6",
+    "@rsbuild/plugin-react": "^1.4.1",
+    "dotenv": "^17.4.2",
+    "express": "^4.19.2",
+    "gray-matter": "^4.0.3",
+    "markdown-it": "^14.1.0",
+    "react": "^19.1.1",
+    "react-dom": "^19.1.1",
+    "sharp": "^0.34.5"
+  },
+  "devDependencies": {
+    "@types/express": "^5.0.6",
+    "@types/markdown-it": "^14.1.2",
+    "@types/node": "^25.6.0",
+    "@types/react": "^19.1.10",
+    "@types/react-dom": "^19.1.7",
+    "tsx": "^4.21.0",
+    "typescript": "^5.9.2",
+    "vitest": "^4.1.5"
+  }
+}
