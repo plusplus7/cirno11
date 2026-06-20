@@ -1,4 +1,4 @@
-import type { AboutContent, ApiResult, BlogPost, LabTool, PhotoEntry, PublishJob } from '../shared/types';
+import type { AboutContent, ApiResult, BlogPost, FriendLink, LabTool, PhotoEntry, PublishJob } from '../shared/types';
 
 async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
   const headers = new Headers(init.headers);
@@ -34,6 +34,8 @@ export const api = {
   savePhotos: (photos: PhotoEntry[]) => request<PhotoEntry[]>('/photos', { method: 'PUT', body: JSON.stringify(photos) }),
   lab: () => request<LabTool[]>('/lab'),
   saveLab: (tools: LabTool[]) => request<LabTool[]>('/lab', { method: 'PUT', body: JSON.stringify(tools) }),
+  friendLinks: () => request<FriendLink[]>('/friend-links'),
+  saveFriendLinks: (links: FriendLink[]) => request<FriendLink[]>('/friend-links', { method: 'PUT', body: JSON.stringify(links) }),
   about: () => request<AboutContent>('/about'),
   saveAbout: (content: AboutContent) => request<AboutContent>('/about', { method: 'PUT', body: JSON.stringify(content) }),
   publish: () => request<PublishJob>('/publish', { method: 'POST' }),

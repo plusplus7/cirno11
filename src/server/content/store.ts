@@ -1,4 +1,4 @@
-import type { AboutContent, BlogPost, LabTool, PhotoEntry } from '../../shared/types';
+import type { AboutContent, BlogPost, FriendLink, LabTool, PhotoEntry } from '../../shared/types';
 
 export interface ContentStore {
   listPosts(): Promise<BlogPost[]>;
@@ -9,6 +9,8 @@ export interface ContentStore {
   savePhotos(photos: PhotoEntry[]): Promise<PhotoEntry[]>;
   listLabTools(): Promise<LabTool[]>;
   saveLabTools(tools: LabTool[]): Promise<LabTool[]>;
+  listFriendLinks(): Promise<FriendLink[]>;
+  saveFriendLinks(links: FriendLink[]): Promise<FriendLink[]>;
   getAbout(): Promise<AboutContent>;
   saveAbout(content: AboutContent): Promise<AboutContent>;
 }

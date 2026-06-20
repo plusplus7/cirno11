@@ -1,8 +1,8 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import { defaultAboutContent } from '../../shared/defaultContent';
-import type { AboutContent, BlogPost, LabTool, PhotoEntry } from '../../shared/types';
-import { isLabToolArray } from '../../shared/types';
+import type { AboutContent, BlogPost, FriendLink, LabTool, PhotoEntry } from '../../shared/types';
+import { isFriendLinkArray, isLabToolArray } from '../../shared/types';
 import { comparePostsByDateDesc, parsePostMarkdown, serializePostMarkdown } from './markdown';
 import type { ContentStore } from './store';
 
@@ -86,6 +86,16 @@ export class FileContentStore implements ContentStore {
   async saveLabTools(tools: LabTool[]): Promise<LabTool[]> {
     await writeJson(path.join(this.dataDir, 'lab.json'), tools);
     return tools;
+  }
+
+  async listFriendLinks(): Promise<FriendLink[]> {
+    const value = await readJson<unknown>(path.join(this.dataDir, 'friend-links.json'), []);
+    return isFriendLinkArray(value) ? value : [];
+  }
+
+  async saveFriendLinks(links: FriendLink[]): Promise<FriendLink[]> {
+    await writeJson(path.join(this.dataDir, 'friend-links.json'), links);
+    return links;
   }
 
   async getAbout(): Promise<AboutContent> {

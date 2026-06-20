@@ -13,12 +13,14 @@ const photos = (await store.listPhotos())
   .filter((photo) => photo.published)
   .sort((a, b) => b.date.localeCompare(a.date));
 const labTools = (await store.listLabTools()).filter((tool) => tool.enabled);
+const friendLinks = (await store.listFriendLinks()).filter((link) => link.enabled);
 const about = await store.getAbout();
 
 const siteData: SiteData = {
   posts,
   photos,
   labTools,
+  friendLinks,
   about,
   generatedAt: new Date().toISOString(),
 };

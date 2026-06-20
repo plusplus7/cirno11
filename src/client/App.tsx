@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import siteData from './generated/site-data.json';
 import { api } from './api';
-import type { AboutContent, BlogPost, LabTool, PhotoEntry, PublicBlogPost, SiteData } from '../shared/types';
+import type { AboutContent, BlogPost, FriendLink, LabTool, PhotoEntry, PublicBlogPost, SiteData } from '../shared/types';
 import './styles/app.css';
 
 const data = siteData as SiteData;
@@ -80,6 +80,7 @@ export function App() {
 
 function PublicShell({ children, path, navigate }: { children: React.ReactNode; path: string; navigate: (path: string) => void }) {
   const tagCounts = useMemo(() => getTagCounts(data.posts), []);
+  const friendLinks = data.friendLinks ?? [];
   const isHome = path === '/';
 
   return (
@@ -114,11 +115,28 @@ function PublicShell({ children, path, navigate }: { children: React.ReactNode; 
                 <div><dt>标签</dt><dd>{Object.keys(tagCounts).length}</dd></div>
               </dl>
             </div>
+            {friendLinks.length > 0 && <FriendLinksAside links={friendLinks} />}
           </aside>
         )}
         <div className="content-stage">{children}</div>
       </div>
       <SiteFooter />
+    </div>
+  );
+}
+
+function FriendLinksAside({ links }: { links: FriendLink[] }) {
+  return (
+    <div className="aside-block friend-links-block">
+      <p className="aside-title">友情链接</p>
+      <div className="friend-link-list">
+        {links.map((link) => (
+          <a className="friend-link" href={link.url} key={link.id} target="_blank" rel="noreferrer">
+            <img src={link.avatarUrl} alt="" />
+            <span>{link.name}</span>
+          </a>
+        ))}
+      </div>
     </div>
   );
 }
@@ -329,7 +347,7 @@ function Lab() {
   );
 }
 
-type AdminTab = 'posts' | 'photos' | 'about' | 'lab' | 'publish';
+type AdminTab = 'posts' | 'photos' | 'about' | 'lab' | 'friends' | 'publish';
 type ToastMessage = { id: number; text: string };
 type PreviewState = 'idle' | 'loading' | 'error';
 
@@ -338,6 +356,7 @@ const adminTabs: { id: AdminTab; label: string }[] = [
   { id: 'photos', label: '摄影' },
   { id: 'about', label: '关于我' },
   { id: 'lab', label: '杂物间' },
+  { id: 'friends', label: '友情链接' },
   { id: 'publish', label: '发布' },
 ];
 
@@ -358,6 +377,7 @@ function Admin() {
   const [posts, setPosts] = useState<BlogPost[]>([]);
   const [photos, setPhotos] = useState<PhotoEntry[]>([]);
   const [tools, setTools] = useState<LabTool[]>([]);
+  const [friendLinks, setFriendLinks] = useState<FriendLink[]>([]);
   const [about, setAbout] = useState<AboutContent>(data.about);
   const [draft, setDraft] = useState<BlogPost>(emptyPost());
   const [preview, setPreview] = useState('');
@@ -374,10 +394,11 @@ function Admin() {
 
   useEffect(() => {
     if (!authenticated) return;
-    void Promise.all([api.posts(), api.photos(), api.lab(), api.about(), api.publishStatus()]).then(([nextPosts, nextPhotos, nextTools, nextAbout, job]) => {
+    void Promise.all([api.posts(), api.photos(), api.lab(), api.friendLinks(), api.about(), api.publishStatus()]).then(([nextPosts, nextPhotos, nextTools, nextFriendLinks, nextAbout, job]) => {
       setPosts(nextPosts);
       setPhotos(nextPhotos);
       setTools(nextTools);
+      setFriendLinks(nextFriendLinks);
       setAbout(nextAbout);
       setStatus(job.state);
     });
@@ -597,6 +618,12 @@ function Admin() {
         </div>
       )}
 
+      {activeTab === 'friends' && (
+        <div className="admin-tab-panel" role="tabpanel">
+          <FriendLinkManager links={friendLinks} setLinks={setFriendLinks} onSuccess={showToast} />
+        </div>
+      )}
+
       {activeTab === 'publish' && (
         <div className="admin-tab-panel" role="tabpanel">
           <section className="admin-panel publish-panel">
@@ -760,6 +787,74 @@ function LabManager({ tools, setTools, onSuccess }: { tools: LabTool[]; setTools
               meta={tool.kind === 'external' ? tool.url : tool.route}
               detail={`${tool.kind === 'external' ? '外部链接' : '内部路由'} / ${tool.enabled ? '已启用' : '已隐藏'}`}
               onDelete={() => void save(tools.filter((item) => item.id !== tool.id), '杂物间入口已删除')}
+            />
+          ))}
+        </StructuredListPanel>
+      </div>
+    </section>
+  );
+}
+
+function FriendLinkManager({ links, setLinks, onSuccess }: { links: FriendLink[]; setLinks: (links: FriendLink[]) => void; onSuccess: (message: string) => void }) {
+  const [name, setName] = useState('');
+  const [avatarUrl, setAvatarUrl] = useState('');
+  const [url, setUrl] = useState('');
+  const [enabled, setEnabled] = useState(true);
+
+  async function save(nextLinks: FriendLink[], message: string) {
+    setLinks(await api.saveFriendLinks(nextLinks));
+    onSuccess(message);
+  }
+
+  async function addLink() {
+    const cleanName = name.trim();
+    const cleanAvatarUrl = avatarUrl.trim();
+    const cleanUrl = url.trim();
+    if (!cleanName || !cleanAvatarUrl || !cleanUrl) return;
+    const id = slugifyId(cleanName) || `friend-${Date.now()}`;
+    const link: FriendLink = { id, name: cleanName, avatarUrl: cleanAvatarUrl, url: cleanUrl, enabled };
+
+    await save([link, ...links.filter((item) => item.id !== link.id)], '友情链接已新增');
+    setName('');
+    setAvatarUrl('');
+    setUrl('');
+    setEnabled(true);
+  }
+
+  return (
+    <section className="admin-panel friend-link-manager">
+      <div className="panel-heading">
+        <div>
+          <p className="eyebrow">结构化数据</p>
+          <h2>友情链接</h2>
+        </div>
+        <span>{links.length}</span>
+      </div>
+      <div className="metadata-workspace">
+        <div className="upload-fields friend-link-form">
+          <label><span>显示名</span><input value={name} onChange={(event) => setName(event.target.value)} placeholder="站点或朋友名称" /></label>
+          <label><span>头像图标 URL</span><input value={avatarUrl} onChange={(event) => setAvatarUrl(event.target.value)} placeholder="https://example.com/avatar.png" /></label>
+          <label><span>链接 URL</span><input value={url} onChange={(event) => setUrl(event.target.value)} placeholder="https://example.com" /></label>
+          <label className="check-field">
+            <input type="checkbox" checked={enabled} onChange={(event) => setEnabled(event.target.checked)} />
+            <span>公开显示</span>
+          </label>
+          <button type="button" onClick={() => void addLink()}>新增友链</button>
+        </div>
+        <StructuredListPanel
+          title="友链列表"
+          eyebrow="友情链接"
+          count={links.length}
+          emptyText="暂无友情链接。"
+        >
+          {links.map((link) => (
+            <MetadataRow
+              imageUrl={link.avatarUrl}
+              key={link.id}
+              title={link.name}
+              meta={link.url}
+              detail={link.enabled ? '已启用' : '已隐藏'}
+              onDelete={() => void save(links.filter((item) => item.id !== link.id), '友情链接已删除')}
             />
           ))}
         </StructuredListPanel>

@@ -1,8 +1,8 @@
 import https from 'node:https';
 import type { AppConfig } from '../config/env';
 import { defaultAboutContent } from '../../shared/defaultContent';
-import type { AboutContent, BlogPost, LabTool, PhotoEntry } from '../../shared/types';
-import { isLabToolArray } from '../../shared/types';
+import type { AboutContent, BlogPost, FriendLink, LabTool, PhotoEntry } from '../../shared/types';
+import { isFriendLinkArray, isLabToolArray } from '../../shared/types';
 import { comparePostsByDateDesc, parsePostMarkdown, serializePostMarkdown } from './markdown';
 import { ContentStoreError, type ContentStore } from './store';
 
@@ -143,6 +143,16 @@ export class GitHubContentStore implements ContentStore {
   async saveLabTools(tools: LabTool[]): Promise<LabTool[]> {
     await this.writeJson('data/lab.json', tools, 'Update lab metadata');
     return tools;
+  }
+
+  async listFriendLinks(): Promise<FriendLink[]> {
+    const value = await this.readJson<unknown>('data/friend-links.json', []);
+    return isFriendLinkArray(value) ? value : [];
+  }
+
+  async saveFriendLinks(links: FriendLink[]): Promise<FriendLink[]> {
+    await this.writeJson('data/friend-links.json', links, 'Update friend link metadata');
+    return links;
   }
 
   async getAbout(): Promise<AboutContent> {

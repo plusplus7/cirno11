@@ -4,8 +4,8 @@ import type { AppConfig } from '../config/env';
 import { clearSessionCookie, createSessionToken, hasOwnerSession, requireOwner, setSessionCookie } from '../auth/session';
 import type { ContentStore } from '../content/store';
 import { renderMarkdown } from '../content/markdown';
-import type { AboutContent, LabTool, PhotoEntry } from '../../shared/types';
-import { isLabToolArray } from '../../shared/types';
+import type { AboutContent, FriendLink, LabTool, PhotoEntry } from '../../shared/types';
+import { isFriendLinkArray, isLabToolArray } from '../../shared/types';
 import type { MediaStorage } from '../media/mediaStorage';
 import type { PublishService } from '../publish/publishService';
 import { asyncHandler, fail, ok } from './http';
@@ -142,6 +142,19 @@ export function createAdminRouter(
     }
 
     ok(response, await contentStore.saveLabTools(request.body as LabTool[]));
+  }));
+
+  router.get('/friend-links', asyncHandler(async (_request, response) => {
+    ok(response, await contentStore.listFriendLinks());
+  }));
+
+  router.put('/friend-links', asyncHandler(async (request, response) => {
+    if (!isFriendLinkArray(request.body)) {
+      fail(response, 400, 'INVALID_FRIEND_LINKS', '友情链接必须是数组，并且每一项都需要 id、name、url、avatarUrl 和 enabled。');
+      return;
+    }
+
+    ok(response, await contentStore.saveFriendLinks(request.body as FriendLink[]));
   }));
 
   router.get('/about', asyncHandler(async (_request, response) => {

@@ -41,6 +41,14 @@ export interface PhotoEntry {
   published: boolean;
 }
 
+export interface FriendLink {
+  id: string;
+  name: string;
+  url: string;
+  avatarUrl: string;
+  enabled: boolean;
+}
+
 export type LabTool =
   | {
       id: string;
@@ -72,8 +80,21 @@ export interface SiteData {
   posts: PublicBlogPost[];
   photos: PhotoEntry[];
   labTools: LabTool[];
+  friendLinks: FriendLink[];
   about: AboutContent;
   generatedAt: string;
+}
+
+export function isFriendLinkArray(value: unknown): value is FriendLink[] {
+  return Array.isArray(value) && value.every((item) => {
+    if (!item || typeof item !== 'object') return false;
+    const candidate = item as Record<string, unknown>;
+    return typeof candidate.id === 'string'
+      && typeof candidate.name === 'string'
+      && typeof candidate.url === 'string'
+      && typeof candidate.avatarUrl === 'string'
+      && typeof candidate.enabled === 'boolean';
+  });
 }
 
 export function isLabToolArray(value: unknown): value is LabTool[] {

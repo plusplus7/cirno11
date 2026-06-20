@@ -4,7 +4,7 @@ import { createSessionToken, hasOwnerSession, requireOwner } from '../src/server
 import type { AppConfig } from '../src/server/config/env';
 import type { MediaStorage } from '../src/server/media/mediaStorage';
 import { PhotoUploadError, storeUploadedPhoto } from '../src/server/routes/adminRoutes';
-import { isLabToolArray } from '../src/shared/types';
+import { isFriendLinkArray, isLabToolArray } from '../src/shared/types';
 
 const config: AppConfig = {
   port: 0,
@@ -74,6 +74,31 @@ describe('lab metadata validation', () => {
 
   it('rejects non-array lab metadata', () => {
     expect(isLabToolArray({ heading: 'About', sections: [] })).toBe(false);
+  });
+});
+
+describe('friend link metadata validation', () => {
+  it('accepts valid friend link arrays', () => {
+    expect(isFriendLinkArray([
+      {
+        id: 'friend',
+        name: 'Friend Site',
+        url: 'https://example.com',
+        avatarUrl: 'https://example.com/avatar.png',
+        enabled: true,
+      },
+    ])).toBe(true);
+  });
+
+  it('rejects invalid friend link metadata', () => {
+    expect(isFriendLinkArray([
+      {
+        id: 'friend',
+        name: 'Friend Site',
+        url: 'https://example.com',
+        enabled: true,
+      },
+    ])).toBe(false);
   });
 });
 

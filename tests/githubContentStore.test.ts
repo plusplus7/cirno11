@@ -62,4 +62,26 @@ describe('GitHubContentStore', () => {
     expect(JSON.parse(fetchMock.mock.calls[1][1].body).message).toContain('Update about profile');
     vi.unstubAllGlobals();
   });
+
+  it('commits friend link metadata', async () => {
+    const fetchMock = vi.fn()
+      .mockResolvedValueOnce({ ok: false, status: 404, json: async () => ({}) })
+      .mockResolvedValueOnce({ ok: true, status: 200, json: async () => ({}) });
+    vi.stubGlobal('fetch', fetchMock);
+
+    const store = new GitHubContentStore(config);
+    await store.saveFriendLinks([
+      {
+        id: 'friend',
+        name: 'Friend Site',
+        url: 'https://example.com',
+        avatarUrl: 'https://example.com/avatar.png',
+        enabled: true,
+      },
+    ]);
+
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+    expect(JSON.parse(fetchMock.mock.calls[1][1].body).message).toContain('Update friend link metadata');
+    vi.unstubAllGlobals();
+  });
 });
