@@ -52,7 +52,7 @@ export class FileContentStore implements ContentStore {
   }
 
   async savePost(post: BlogPost): Promise<BlogPost> {
-    const filename = `${post.frontmatter.date}-${post.frontmatter.slug}.md`;
+    const filename = `${post.frontmatter.slug}.md`;
     const postPath = `posts/${filename}`;
     const storedPost = { ...post, path: postPath };
     await fs.mkdir(this.postsDir, { recursive: true });
